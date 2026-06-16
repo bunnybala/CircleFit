@@ -43,18 +43,21 @@ jobs:
 
     - name: Run Backend, Frontend, and Selenium Tests
       run: |
-        # Start Java Spring Boot backend in background (redirect stdin to prevent suspension)
+        # Pre-compile the backend to make bootRun start instantly
         cd backend
         chmod +x gradlew
+        ./gradlew classes
+        
+        # Start Java Spring Boot backend in background (redirect stdin to prevent suspension)
         ./gradlew bootRun < /dev/null &
         
         # Start React Vite app in background (redirect stdin to prevent suspension)
         cd ../CircleFit_web
         npm run dev < /dev/null &
         
-        # Give services ample time to startup and bind to ports 8081 and 5173
-        echo "Waiting for services to boot..."
-        sleep 25
+        # Wait for both services to be fully listening on their ports
+        echo "Waiting for ports 8081 and 5173 to open..."
+        npx wait-on tcp:127.0.0.1:8081 tcp:127.0.0.1:5173 --timeout 60000
         
         # Execute Selenium E2E tests
         cd selenium-tests
