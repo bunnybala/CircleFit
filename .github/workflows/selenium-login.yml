@@ -57,7 +57,7 @@ jobs:
         
         # Wait for both services to be fully listening on their ports
         echo "Waiting for ports 8081 and 5173 to open..."
-        npx wait-on tcp:127.0.0.1:8081 tcp:127.0.0.1:5173 --timeout 60000
+        npx wait-on tcp:localhost:8081 tcp:localhost:5173 --timeout 60000
         
         # Execute Selenium E2E tests
         cd selenium-tests
