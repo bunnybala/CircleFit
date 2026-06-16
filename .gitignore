@@ -8,9 +8,9 @@
 *.sw?
 
 # Secrets & Service Account Keys
-circlefit-926d3-firebase-adminsdk-fbsvc-743f8f4e8a.json
+circlefit-*.json
 google-services.json
-*.json
+firebase-admin.json
 
 
 # Gradle & Java Build

@@ -1,0 +1,13 @@
+{
+  "name": "circlefit-web-selenium-tests",
+  "version": "1.0.0",
+  "description": "Selenium JS E2E tests for CircleFit web",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha tests/**/*.test.js --timeout 30000"
+  },
+  "devDependencies": {
+    "selenium-webdriver": "^4.16.0",
+    "mocha": "^10.2.0"
+  }
+}
