@@ -65,6 +65,7 @@ function Login() {
             <label className="form-label">Email Address</label>
             <input
               type="email"
+              id="email"
               className="form-input"
               placeholder="e.g. name@example.com"
               value={email}
@@ -77,6 +78,7 @@ function Login() {
             <label className="form-label">Password</label>
             <input
               type="password"
+              id="password"
               className="form-input"
               placeholder="••••••••"
               value={password}
@@ -85,7 +87,7 @@ function Login() {
             />
           </div>
 
-          <button type="submit" className="auth-btn" disabled={loading}>
+          <button type="submit" id="login-button" className="auth-btn" disabled={loading}>
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>

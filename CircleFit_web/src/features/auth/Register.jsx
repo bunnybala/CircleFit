@@ -78,6 +78,7 @@ function Register() {
             <label className="form-label">Username</label>
             <input
               type="text"
+              id="username"
               className="form-input"
               placeholder="e.g. fitwarrior"
               value={username}
@@ -90,6 +91,7 @@ function Register() {
             <label className="form-label">Email Address</label>
             <input
               type="email"
+              id="email"
               className="form-input"
               placeholder="e.g. name@example.com"
               value={email}
@@ -102,6 +104,7 @@ function Register() {
             <label className="form-label">Password</label>
             <input
               type="password"
+              id="password"
               className="form-input"
               placeholder="Min. 6 characters"
               value={password}
@@ -110,7 +113,7 @@ function Register() {
             />
           </div>
 
-          <button type="submit" className="auth-btn" disabled={loading}>
+          <button type="submit" id="register-button" className="auth-btn" disabled={loading}>
             {loading ? 'Creating Account...' : 'Register'}
           </button>
         </form>
