@@ -21,7 +21,7 @@ describe('CircleFit Web Login Flow', function () {
 
   it('should validate user login and redirect to dashboard', async function () {
     console.log("Navigating directly to Login screen...");
-    await driver.get('http://localhost:5173/CircleFit/#/login');
+    await driver.get('http://127.0.0.1:5173/CircleFit/#/login');
     await driver.sleep(2000);
 
     console.log("Locating Login page fields...");

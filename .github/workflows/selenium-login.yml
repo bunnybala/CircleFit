@@ -43,14 +43,14 @@ jobs:
 
     - name: Run Backend, Frontend, and Selenium Tests
       run: |
-        # Start Java Spring Boot backend in background
+        # Start Java Spring Boot backend in background (redirect stdin to prevent suspension)
         cd backend
         chmod +x gradlew
-        ./gradlew bootRun &
+        ./gradlew bootRun < /dev/null &
         
-        # Start React Vite app in background
+        # Start React Vite app in background (redirect stdin and bind explicitly to 127.0.0.1)
         cd ../CircleFit_web
-        npm run dev &
+        npm run dev -- --host 127.0.0.1 < /dev/null &
         
         # Give services ample time to startup and bind to ports 8081 and 5173
         echo "Waiting for services to boot..."
