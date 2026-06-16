@@ -24,8 +24,9 @@ describe('CircleFit Web Login Flow', function () {
     await driver.get('http://localhost:5173/CircleFit/#/register');
     await driver.sleep(2000);
 
+    let usernameField;
     try {
-      const usernameField = await driver.wait(until.elementLocated(By.id('username')), 3000);
+      usernameField = await driver.wait(until.elementLocated(By.id('username')), 3000);
       const emailField = await driver.wait(until.elementLocated(By.id('email')), 3000);
       const passwordField = await driver.wait(until.elementLocated(By.id('password')), 3000);
       const registerButton = await driver.wait(until.elementLocated(By.id('register-button')), 3000);
@@ -43,7 +44,16 @@ describe('CircleFit Web Login Flow', function () {
       
       // Navigate to login page
       await driver.get('http://localhost:5173/CircleFit/#/login');
-      await driver.sleep(1000);
+      
+      // Wait for registration form to unmount to avoid locating stale inputs
+      if (usernameField) {
+        try {
+          await driver.wait(until.stalenessOf(usernameField), 5000);
+          console.log("Registration elements are now stale.");
+        } catch (staleErr) {
+          console.log("Staleness check warning:", staleErr.message);
+        }
+      }
       
       const emailField = await driver.wait(until.elementLocated(By.id('email')), 5000);
       const passwordField = await driver.wait(until.elementLocated(By.id('password')), 5000);
