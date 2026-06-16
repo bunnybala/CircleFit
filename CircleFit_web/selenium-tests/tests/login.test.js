@@ -13,6 +13,22 @@ describe('CircleFit Web Login Flow', function () {
     console.log("Mocha Before Hook: Arguments added");
     driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
     console.log("Mocha Before Hook: Driver built successfully!");
+
+    console.log("Seeding test user via REST API...");
+    try {
+      const response = await fetch('http://127.0.0.1:8081/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: 'testuser',
+          email: 'test@circlefit.com',
+          password: 'test123'
+        })
+      });
+      console.log("User seed response status:", response.status);
+    } catch (err) {
+      console.log("User seeding failed (likely already exists or database connecting), continuing:", err.message);
+    }
   });
 
   after(async function () {
@@ -21,7 +37,7 @@ describe('CircleFit Web Login Flow', function () {
 
   it('should validate user login and redirect to dashboard', async function () {
     console.log("Navigating directly to Login screen...");
-    await driver.get('http://127.0.0.1:5173/CircleFit/#/login');
+    await driver.get('http://localhost:5173/CircleFit/#/login');
     await driver.sleep(2000);
 
     console.log("Locating Login page fields...");

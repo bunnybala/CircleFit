@@ -48,9 +48,9 @@ jobs:
         chmod +x gradlew
         ./gradlew bootRun < /dev/null &
         
-        # Start React Vite app in background (redirect stdin and bind explicitly to 127.0.0.1)
+        # Start React Vite app in background (redirect stdin to prevent suspension)
         cd ../CircleFit_web
-        npm run dev -- --host 127.0.0.1 < /dev/null &
+        npm run dev < /dev/null &
         
         # Give services ample time to startup and bind to ports 8081 and 5173
         echo "Waiting for services to boot..."
