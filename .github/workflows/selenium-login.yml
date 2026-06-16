@@ -29,13 +29,6 @@ jobs:
         distribution: 'temurin'
         cache: 'gradle'
 
-    - name: Run Backend App in Background
-      run: |
-        cd backend
-        chmod +x gradlew
-        ./gradlew bootRun &
-        sleep 15
-
     - name: Setup Node.js
       uses: actions/setup-node@v3
       with:
@@ -48,18 +41,27 @@ jobs:
       run: |
         npm install
 
-    - name: Start React App in Background
-      working-directory: CircleFit_web
+    - name: Run Backend, Frontend, and Selenium Tests
       run: |
+        # Start Java Spring Boot backend in background
+        cd backend
+        chmod +x gradlew
+        ./gradlew bootRun &
+        
+        # Start React Vite app in background
+        cd ../CircleFit_web
         npm run dev &
-      env:
-        PORT: 5173
-
-    - name: Run Selenium Tests
-      working-directory: CircleFit_web/selenium-tests
-      run: |
+        
+        # Give services ample time to startup and bind to ports 8081 and 5173
+        echo "Waiting for services to boot..."
+        sleep 25
+        
+        # Execute Selenium E2E tests
+        cd selenium-tests
         npm install
         npm test
+      env:
+        PORT: 5173
 
     - name: Build Production Bundle
       working-directory: CircleFit_web
