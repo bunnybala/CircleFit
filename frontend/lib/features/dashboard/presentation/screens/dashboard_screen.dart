@@ -28,8 +28,8 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
     // 1. Immediately trigger an automatic sync when the app is opened
     _triggerSync();
 
-    // 2. Set up a 1-minute periodic sync timer when the app is open (foreground)
-    _foregroundSyncTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
+    // 2. Set up a 5-second periodic sync timer when the app is open (foreground)
+    _foregroundSyncTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       _triggerSync();
     });
   }

@@ -36,6 +36,7 @@ void onStart(ServiceInstance service) async {
   int baseSteps = (savedDateStr != null && savedDateStr != startTodayStr) ? 0 : savedBase;
   String currentDateStr = startTodayStr;
   int currentTodaySteps = baseSteps == 0 ? 0 : (prefs.getInt('last_step_count') ?? 0);
+  DateTime lastSyncTime = DateTime.fromMillisecondsSinceEpoch(0);
 
   // ── Pedometer stream ──────────────────────────────────────────────────────
   try {
@@ -80,6 +81,18 @@ void onStart(ServiceInstance service) async {
         'steps': todaySteps,
         'timestamp': event.timeStamp.toIso8601String(),
       });
+
+      // Instantly sync steps to the backend database on sensor events (throttled to 10 seconds to avoid database locks)
+      final now = DateTime.now();
+      if (now.difference(lastSyncTime).inSeconds >= 10) {
+        lastSyncTime = now;
+        prefs.reload().then((_) {
+          final token = prefs.getString('jwt_token');
+          if (token != null && todaySteps > 0) {
+            _syncToBackend(steps: todaySteps, token: token);
+          }
+        });
+      }
     }, onError: (error) {
       print('Pedometer error in background: $error');
     });
@@ -89,6 +102,7 @@ void onStart(ServiceInstance service) async {
 
   // ── Sync steps immediately on-demand (triggered by foreground app events) ──
   service.on('syncSteps').listen((event) async {
+    await prefs.reload(); // Reload prefs to catch updates from the main isolate
     final token = prefs.getString('jwt_token');
     if (token == null) return;
     if (currentTodaySteps > 0) {
@@ -115,7 +129,7 @@ Future<void> _syncToBackend({required int steps, required String token}) async {
     // Read base URL from shared prefs, or use default
     final prefs = await SharedPreferences.getInstance();
     // final baseUrl = prefs.getString('api_base_url') ?? 'http://192.168.1.5:8081/api';
-    final baseUrl = prefs.getString('api_base_url') ?? 'http://192.168.1.7:8081/api';
+    final baseUrl = prefs.getString('api_base_url') ?? 'http://192.168.1.12:8081/api';
 
     final request = await client.postUrl(Uri.parse('$baseUrl/steps/sync'));
     request.headers.set('Content-Type', 'application/json');

@@ -74,6 +74,22 @@ jobs:
       run: |
         npm run build
 
+    - name: Upload Selenium Test Excel Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: selenium-test-report
+        path: CircleFit_Web_Test_Report.xlsx
+        if-no-files-found: ignore
+
+    - name: Upload Appium Test Excel Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: appium-test-report
+        path: CircleFit_Frontend_Test_Report.xlsx
+        if-no-files-found: ignore
+
     - name: Deploy to GitHub Pages
       uses: JamesIves/github-pages-deploy-action@v4
       with:
