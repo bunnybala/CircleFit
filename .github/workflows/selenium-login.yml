@@ -90,6 +90,22 @@ jobs:
         path: CircleFit_Frontend_Test_Report.xlsx
         if-no-files-found: ignore
 
+    - name: Upload Load Test Excel Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: load-test-report
+        path: CircleFit_Load_Test_Report.xlsx
+        if-no-files-found: ignore
+
+    - name: Upload Vulnerability Test Excel Report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: vulnerability-test-report
+        path: CircleFit_Vulnerability_Test_Report.xlsx
+        if-no-files-found: ignore
+
     - name: Deploy to GitHub Pages
       uses: JamesIves/github-pages-deploy-action@v4
       with:

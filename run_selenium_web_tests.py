@@ -22,7 +22,7 @@ from openpyxl.utils import get_column_letter
 
 # ── CONFIG ─────────────────────────────────────────────────────────────────────
 WEB_URL = "http://localhost:5173"
-REPORT_PATH = r"d:\App\CircleFit\CircleFit_Web_Test_Report.xlsx"
+REPORT_PATH = "CircleFit_Web_Test_Report.xlsx"
 
 # ── COMPREHENSIVE TEST CASES DEFINITIONS ───────────────────────────────────────
 unit_tests = [

@@ -22,7 +22,7 @@ APPIUM_SERVER = "http://127.0.0.1:4723"
 APK_PATH = r"d:\App\CircleFit\frontend\build\app\outputs\flutter-apk\app-debug.apk"
 APP_PACKAGE = "com.circlefit.frontend"
 APP_ACTIVITY = ".MainActivity"
-REPORT_PATH = r"d:\App\CircleFit\CircleFit_Frontend_Test_Report.xlsx"
+REPORT_PATH = "CircleFit_Frontend_Test_Report.xlsx"
 
 # Test credentials
 TEST_EMAIL = "test@circlefit.com"
