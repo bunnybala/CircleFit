@@ -16,6 +16,11 @@ function Login() {
       setError('Please fill in all fields');
       return;
     }
+    const emailRegex = /^[\w-\.]+@([\w-]+\.)+com$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email ending with .com');
+      return;
+    }
     
     setLoading(true);
     setError('');

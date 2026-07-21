@@ -51,7 +51,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   TextFormField(
                     controller: _emailController,
                     decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email)),
-                    validator: (v) => v!.isEmpty ? 'Enter email' : null,
+                    validator: (v) {
+                      if (v == null || v.isEmpty) return 'Enter email';
+                      final regex = RegExp(r'^[\w-\.]+@([\w-]+\.)+com$');
+                      if (!regex.hasMatch(v)) {
+                        return 'Enter a valid email ending with .com';
+                      }
+                      return null;
+                    },
                   ),
                   const SizedBox(height: 16),
                   TextFormField(

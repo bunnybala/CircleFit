@@ -55,32 +55,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
     super.dispose();
   }
 
-  Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery);
-    if (image != null && mounted) {
-      setState(() => _isUploadingImage = true);
-      final success = await ref.read(profileProvider.notifier).uploadImage(image);
-      if (mounted) {
-        setState(() => _isUploadingImage = false);
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Profile picture updated successfully!'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Failed to upload profile picture.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    }
-  }
+
 
   int? _calculateRecommendedCalories() {
     final age = int.tryParse(_ageController.text);
@@ -405,29 +380,7 @@ class _ProfileFormScreenState extends ConsumerState<ProfileFormScreen> {
                ),
             ),
           ),
-          Positioned(
-            bottom: 0,
-            right: 4,
-            child: GestureDetector(
-              onTap: _isUploadingImage ? null : _pickImage,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFF8585),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: const Icon(Icons.edit_outlined, size: 16, color: Colors.white),
-              ),
-            ),
-          ),
+
         ],
       ),
     );

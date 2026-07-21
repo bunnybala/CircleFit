@@ -213,66 +213,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 : null,
           ),
         ),
-        Positioned(
-          bottom: 0,
-          right: 0,
-          child: GestureDetector(
-            onTap: () async {
-              final picker = ImagePicker();
-              final image = await picker.pickImage(source: ImageSource.gallery);
-              if (image != null && mounted) {
-                showDialog(
-                  context: context,
-                  barrierDismissible: false,
-                  builder: (context) => const Center(
-                    child: Card(
-                      child: Padding(
-                        padding: EdgeInsets.all(24.0),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            CircularProgressIndicator(color: Color(0xFF6C63FF)),
-                            SizedBox(height: 16),
-                            Text('Uploading profile picture...'),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-
-                final success = await ref.read(profileProvider.notifier).uploadImage(image);
-
-                if (mounted) {
-                  Navigator.of(context, rootNavigator: true).pop();
-                  if (success) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Profile picture updated successfully!'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Failed to update profile picture.'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: const BoxDecoration(
-                color: Color(0xFFFF8585),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
-            ),
-          ),
-        ),
       ],
     );
   }

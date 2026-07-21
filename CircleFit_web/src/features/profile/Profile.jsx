@@ -233,27 +233,6 @@ function Profile() {
             }}>
               {profile.name ? profile.name[0].toUpperCase() : profile.username[0]?.toUpperCase()}
             </div>
-            <button 
-              type="button"
-              onClick={handleMockPhotoUpload}
-              style={{
-                position: 'absolute',
-                bottom: 0,
-                right: 0,
-                background: 'var(--danger)',
-                border: 'none',
-                width: '24px',
-                height: '24px',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                fontSize: '12px'
-              }}
-            >
-              📷
-            </button>
           </div>
 
           <div>
@@ -587,9 +566,8 @@ function Profile() {
                   onChange={(e) => setFitnessGoal(e.target.value)}
                 >
                   <option value="Lose Weight">Lose Weight</option>
+                  <option value="Maintain Weight">Maintain Weight</option>
                   <option value="Build Muscle">Build Muscle</option>
-                  <option value="Maintain Fitness">Maintain Fitness</option>
-                  <option value="General Health">General Health</option>
                 </select>
               </div>
 
@@ -603,6 +581,74 @@ function Profile() {
                   placeholder="kcal"
                 />
               </div>
+
+              {(() => {
+                if (!age || !height || !weight) return null;
+                const w = parseFloat(weight);
+                const h = parseFloat(height);
+                const a = parseInt(age, 10);
+                if (isNaN(w) || isNaN(h) || isNaN(a) || w <= 0 || h <= 0 || a <= 0) return null;
+
+                let bmrVal;
+                if (gender && (gender.toLowerCase().startsWith('f') || gender.toLowerCase().startsWith('w'))) {
+                  bmrVal = 10 * w + 6.25 * h - 5 * a - 161;
+                } else {
+                  bmrVal = 10 * w + 6.25 * h - 5 * a + 5;
+                }
+
+                let tdee = bmrVal * 1.375;
+                let target = tdee;
+                if (fitnessGoal === 'Lose Weight') {
+                  target -= 500;
+                } else if (fitnessGoal === 'Build Muscle') {
+                  target += 300;
+                }
+                if (target < 1200) target = 1200;
+                const rec = Math.round(target);
+
+                return (
+                  <div style={{
+                    gridColumn: 'span 2',
+                    background: 'rgba(108, 99, 255, 0.05)',
+                    border: '1px solid rgba(108, 99, 255, 0.15)',
+                    borderRadius: '16px',
+                    padding: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '12px',
+                    marginTop: '10px'
+                  }}>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--primary)', fontWeight: '700', fontSize: '13px', marginBottom: '4px' }}>
+                        <span>⚡</span> Recommended Daily Intake
+                      </div>
+                      <div style={{ fontSize: '18px', fontWeight: '800', color: 'var(--dark)', fontFamily: 'var(--font-heading)' }}>
+                        {rec} kcal / day
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--grey-text)', marginTop: '2px' }}>
+                        Calculated using Mifflin-St Jeor formula (1.375 active factor)
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setDailyCalorieGoal(rec)}
+                      style={{
+                        background: 'var(--primary)',
+                        color: 'white',
+                        border: 'none',
+                        padding: '8px 16px',
+                        borderRadius: '10px',
+                        fontWeight: '700',
+                        fontSize: '13px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Apply
+                    </button>
+                  </div>
+                );
+              })()}
             </div>
 
             <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>

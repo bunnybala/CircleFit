@@ -21,6 +21,11 @@ function Register() {
       setError('Password must be at least 6 characters');
       return;
     }
+    const emailRegex = /^[\w-\.]+@([\w-]+\.)+com$/;
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email ending with .com');
+      return;
+    }
 
     setLoading(true);
     setError('');
