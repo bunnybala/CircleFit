@@ -56,7 +56,9 @@ function GroupDetails() {
     if (activeTab !== 'chat') return;
 
     const token = localStorage.getItem('jwt_token');
-    const wsUrl = 'ws://192.168.1.12:8081/ws-chat/websocket';
+    const hostname = window.location.hostname;
+    const wsHost = (hostname === 'localhost' || hostname === '127.0.0.1') ? 'localhost' : hostname;
+    const wsUrl = `ws://${wsHost}:8081/ws-chat/websocket`;
 
     const client = new Client({
       brokerURL: wsUrl,
