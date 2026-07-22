@@ -66,4 +66,12 @@ public class StepService {
         LocalDate startDate = endDate.minusDays(6);
         return dailyStepRepository.findByUserIdAndDateBetweenOrderByDateAsc(user.getId(), startDate, endDate);
     }
+
+    public DailyStep getTodayStep(String identifier) {
+        User user = userRepository.findByUsername(identifier)
+                .orElseGet(() -> userRepository.findByEmail(identifier)
+                        .orElseThrow(() -> new RuntimeException("User not found")));
+        return dailyStepRepository.findByUserIdAndDate(user.getId(), LocalDate.now())
+                .orElse(DailyStep.builder().user(user).date(LocalDate.now()).steps(0).calories(0.0).distance(0.0).build());
+    }
 }

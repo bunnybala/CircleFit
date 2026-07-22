@@ -22,13 +22,19 @@ function Dashboard() {
       // Get profile
       const profRes = await apiClient.get('/profile');
       setProfile(profRes.data);
-      if (profRes.data && profRes.data.dailyCalorieGoal) {
-        setWaterGoal(profRes.data.dailyCalorieGoal); // Match goal calculations if needed, default is 2000
-      }
       
       // Get weekly steps
       const weeklyRes = await apiClient.get('/steps/weekly');
       setWeeklyData(weeklyRes.data || []);
+
+      // Get water intake log for today
+      const waterRes = await apiClient.get('/water');
+      if (waterRes.data) {
+        setWaterMl(waterRes.data.amountMl || 0);
+        if (waterRes.data.goalMl) {
+          setWaterGoal(waterRes.data.goalMl);
+        }
+      }
     } catch (err) {
       console.error('Failed to load dashboard data:', err);
     }
@@ -37,16 +43,9 @@ function Dashboard() {
   useEffect(() => {
     fetchData();
     
-    // Auto-refresh stats from the database every 10 seconds to sync mobile steps
+    // Auto-refresh stats from the database every 10 seconds to sync mobile steps & water
     const interval = setInterval(fetchData, 10000);
     
-    // Load water state for today
-    const todayStr = getTodayDateKey();
-    const savedWater = localStorage.getItem(`water_intake_${todayStr}`);
-    const savedWaterGoal = localStorage.getItem('water_goal');
-    if (savedWater) setWaterMl(parseInt(savedWater, 10));
-    if (savedWaterGoal) setWaterGoal(parseInt(savedWaterGoal, 10));
-
     return () => clearInterval(interval);
   }, []);
 
@@ -77,21 +76,32 @@ function Dashboard() {
     setTimeout(() => setToastMessage(''), 3000);
   };
 
-  const handleAddWater = (ml) => {
+  const handleAddWater = async (ml) => {
     const todayStr = getTodayDateKey();
-    const current = parseInt(localStorage.getItem(`water_intake_${todayStr}`) || '0', 10);
-    const newVal = Math.min(current + ml, 10000); // capped at 10L
+    const newVal = Math.min(waterMl + ml, 10000); // capped at 10L
     localStorage.setItem(`water_intake_${todayStr}`, newVal);
     setWaterMl(newVal);
     showToast(`Added ${ml}ml! 💧`);
+    
+    try {
+      await apiClient.post('/water/log', { amountMl: newVal, goalMl: waterGoal });
+    } catch (err) {
+      console.error('Failed to log water:', err);
+    }
   };
 
-  const handleResetWater = () => {
+  const handleResetWater = async () => {
     const todayStr = getTodayDateKey();
     localStorage.setItem(`water_intake_${todayStr}`, 0);
     setWaterMl(0);
     setShowWaterReset(false);
     showToast('Water logs reset.');
+
+    try {
+      await apiClient.post('/water/reset');
+    } catch (err) {
+      console.error('Failed to reset water:', err);
+    }
   };
 
   // Helper to get weekday name from date string or Date object

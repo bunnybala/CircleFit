@@ -60,10 +60,14 @@ function Profile() {
         setTodaySteps(0);
       }
 
-      const now = new Date();
-      const todayStr = `${now.getFullYear()}_${String(now.getMonth() + 1).padStart(2, '0')}_${String(now.getDate()).padStart(2, '0')}`;
-      const savedWater = localStorage.getItem(`water_intake_${todayStr}`);
-      if (savedWater) setWaterMl(parseInt(savedWater, 10));
+      try {
+        const waterRes = await apiClient.get('/water');
+        if (waterRes.data) {
+          setWaterMl(waterRes.data.amountMl || 0);
+        }
+      } catch (waterErr) {
+        console.error('Failed to load water log:', waterErr);
+      }
     } catch (err) {
       console.error(err);
       setError('Failed to fetch profile details.');

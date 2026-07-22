@@ -1,5 +1,7 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/network/dio_client.dart';
 
 class WaterIntakeState {
   final int currentMl;
@@ -26,10 +28,12 @@ class WaterIntakeState {
 }
 
 class WaterIntakeNotifier extends Notifier<WaterIntakeState> {
+  final Dio _dio = DioClient.instance;
+
   @override
   WaterIntakeState build() {
     final today = _getTodayDateStr();
-    _loadState();
+    fetchWaterLog();
     return WaterIntakeState(
       currentMl: 0,
       goalMl: 2000,
@@ -42,13 +46,26 @@ class WaterIntakeNotifier extends Notifier<WaterIntakeState> {
     return "${now.year}_${now.month.toString().padLeft(2, '0')}_${now.day.toString().padLeft(2, '0')}";
   }
 
-  Future<void> _loadState() async {
+  Future<void> fetchWaterLog() async {
     final prefs = await SharedPreferences.getInstance();
     final today = _getTodayDateStr();
     
-    final savedMl = prefs.getInt('water_intake_$today') ?? 0;
-    final savedGoal = prefs.getInt('water_goal') ?? 2000;
-    
+    int savedMl = prefs.getInt('water_intake_$today') ?? 0;
+    int savedGoal = prefs.getInt('water_goal') ?? 2000;
+
+    try {
+      final response = await _dio.get('/water');
+      if (response.statusCode == 200 && response.data != null) {
+        savedMl = response.data['amountMl'] as int? ?? 0;
+        savedGoal = response.data['goalMl'] as int? ?? 2000;
+        
+        await prefs.setInt('water_intake_$today', savedMl);
+        await prefs.setInt('water_goal', savedGoal);
+      }
+    } catch (e) {
+      // Offline fallback to SharedPreferences
+    }
+
     state = WaterIntakeState(
       currentMl: savedMl,
       goalMl: savedGoal,
@@ -61,19 +78,24 @@ class WaterIntakeNotifier extends Notifier<WaterIntakeState> {
     final today = _getTodayDateStr();
 
     int newMl = state.currentMl;
-    // Check if day changed
     if (state.dateStr != today) {
       newMl = 0;
     }
 
-    newMl = (newMl + ml).clamp(0, 10000); // Max cap 10 liters
-    
+    newMl = (newMl + ml).clamp(0, 10000);
     await prefs.setInt('water_intake_$today', newMl);
     
     state = state.copyWith(
       currentMl: newMl,
       dateStr: today,
     );
+
+    try {
+      await _dio.post('/water/log', data: {
+        'amountMl': newMl,
+        'goalMl': state.goalMl,
+      });
+    } catch (_) {}
   }
 
   Future<void> resetWater() async {
@@ -86,6 +108,10 @@ class WaterIntakeNotifier extends Notifier<WaterIntakeState> {
       currentMl: 0,
       dateStr: today,
     );
+
+    try {
+      await _dio.post('/water/reset');
+    } catch (_) {}
   }
 
   Future<void> updateGoal(int goal) async {
@@ -95,6 +121,13 @@ class WaterIntakeNotifier extends Notifier<WaterIntakeState> {
     state = state.copyWith(
       goalMl: goal,
     );
+
+    try {
+      await _dio.post('/water/log', data: {
+        'amountMl': state.currentMl,
+        'goalMl': goal,
+      });
+    } catch (_) {}
   }
 }
 

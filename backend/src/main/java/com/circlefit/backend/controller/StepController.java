@@ -28,4 +28,9 @@ public class StepController {
     public ResponseEntity<List<DailyStep>> getWeeklyStats(Authentication authentication) {
         return ResponseEntity.ok(stepService.getWeeklyStats(authentication.getName()));
     }
+
+    @GetMapping("/today")
+    public ResponseEntity<DailyStep> getTodayStep(Authentication authentication) {
+        return ResponseEntity.ok(stepService.getTodayStep(authentication.getName()));
+    }
 }

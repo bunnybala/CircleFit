@@ -22,6 +22,14 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return;
+      if (_tabController.index == 1) {
+        ref.invalidate(leaderboardProvider(widget.groupId));
+      } else if (_tabController.index == 2) {
+        ref.invalidate(challengesProvider(widget.groupId));
+      }
+    });
   }
 
   @override
@@ -60,7 +68,10 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen>
           IconButton(
             icon: const Icon(Icons.add_chart),
             tooltip: 'Create Challenge',
-            onPressed: () => context.push('/groups/${widget.groupId}/challenge'),
+            onPressed: () async {
+              await context.push('/groups/${widget.groupId}/challenge');
+              ref.invalidate(challengesProvider(widget.groupId));
+            },
           )
         ],
       ),
@@ -71,95 +82,123 @@ class _GroupDetailScreenState extends ConsumerState<GroupDetailScreen>
           ChatTab(groupId: widget.groupId),
 
           // LEADERBOARD TAB
-          Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: SegmentedButton<String>(
-                  segments: const [
-                    ButtonSegment(value: 'total', label: Text('All-Time'), icon: Icon(Icons.star)),
-                    ButtonSegment(value: 'today', label: Text("Today"), icon: Icon(Icons.today)),
-                  ],
-                  selected: {sortBy},
-                  onSelectionChanged: (val) {
-                    ref.read(leaderboardSortProvider.notifier).set(val.first);
-                    ref.invalidate(leaderboardProvider(widget.groupId));
-                  },
+          RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(leaderboardProvider(widget.groupId));
+              ref.invalidate(myGroupsProvider);
+            },
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: SegmentedButton<String>(
+                    segments: const [
+                      ButtonSegment(value: 'total', label: Text('All-Time'), icon: Icon(Icons.star)),
+                      ButtonSegment(value: 'today', label: Text("Today"), icon: Icon(Icons.today)),
+                    ],
+                    selected: {sortBy},
+                    onSelectionChanged: (val) {
+                      ref.read(leaderboardSortProvider.notifier).set(val.first);
+                      ref.invalidate(leaderboardProvider(widget.groupId));
+                    },
+                  ),
                 ),
-              ),
-              Expanded(
-                child: leaderboard.when(
-                  data: (entries) {
-                    if (entries.isEmpty) {
-                      return Center(
-                        child: Text(
-                          'No steps logged yet.',
-                          style: TextStyle(color: Colors.grey[500]),
-                        ),
-                      );
-                    }
-                    
-                    final skippedEntries = entries.skip(3).toList();
-                    
-                    return ListView(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      children: [
-                        _LeaderboardPodium(entries: entries, sortBy: sortBy),
-                        if (skippedEntries.isNotEmpty) ...[
-                          const SizedBox(height: 16),
-                          const Text(
-                            'All Rankings',
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF2D3142),
+                Expanded(
+                  child: leaderboard.when(
+                    data: (entries) {
+                      if (entries.isEmpty) {
+                        return ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          children: [
+                            const SizedBox(height: 100),
+                            Center(
+                              child: Text(
+                                'No steps logged yet.',
+                                style: TextStyle(color: Colors.grey[500]),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          ...List.generate(
-                            skippedEntries.length,
-                            (index) => _LeaderboardTile(
-                              entry: skippedEntries[index],
-                              sortBy: sortBy,
+                          ],
+                        );
+                      }
+                      
+                      final skippedEntries = entries.skip(3).toList();
+                      
+                      return ListView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        children: [
+                          _LeaderboardPodium(entries: entries, sortBy: sortBy),
+                          if (skippedEntries.isNotEmpty) ...[
+                            const SizedBox(height: 16),
+                            const Text(
+                              'All Rankings',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF2D3142),
+                              ),
                             ),
-                          ),
+                            const SizedBox(height: 12),
+                            ...List.generate(
+                              skippedEntries.length,
+                              (index) => _LeaderboardTile(
+                                entry: skippedEntries[index],
+                                sortBy: sortBy,
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
-                    );
-                  },
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (e, _) => Center(child: Text('Error: $e')),
+                      );
+                    },
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (e, _) => Center(child: Text('Error: $e')),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
 
           // CHALLENGES TAB
-          challenges.when(
-            data: (list) => list.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+          RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(challengesProvider(widget.groupId));
+            },
+            child: challenges.when(
+              data: (list) => list.isEmpty
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
                       children: [
-                        Icon(Icons.flag_outlined, size: 60, color: Colors.grey[300]),
-                        const SizedBox(height: 12),
-                        Text('No challenges yet', style: TextStyle(color: Colors.grey[600])),
-                        const SizedBox(height: 8),
-                        ElevatedButton(
-                          onPressed: () => context.push('/groups/${widget.groupId}/challenge'),
-                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6C63FF)),
-                          child: const Text('Create First Challenge', style: TextStyle(color: Colors.white)),
+                        const SizedBox(height: 100),
+                        Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.flag_outlined, size: 60, color: Colors.grey[300]),
+                              const SizedBox(height: 12),
+                              Text('No challenges yet', style: TextStyle(color: Colors.grey[600])),
+                              const SizedBox(height: 8),
+                              ElevatedButton(
+                                onPressed: () async {
+                                  await context.push('/groups/${widget.groupId}/challenge');
+                                  ref.invalidate(challengesProvider(widget.groupId));
+                                },
+                                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF6C63FF)),
+                                child: const Text('Create First Challenge', style: TextStyle(color: Colors.white)),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
+                    )
+                  : ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.all(16),
+                      itemCount: list.length,
+                      itemBuilder: (_, i) => _ChallengeTile(challenge: list[i], groupId: widget.groupId),
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: list.length,
-                    itemBuilder: (_, i) => _ChallengeTile(challenge: list[i], groupId: widget.groupId),
-                  ),
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Center(child: Text('Error: $e')),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Error: $e')),
+            ),
           ),
         ],
       ),

@@ -54,6 +54,18 @@ class StepRepository {
       throw Exception(e.response?.data['message'] ?? 'Failed to fetch weekly step statistics');
     }
   }
+
+  Future<int> fetchTodaySteps() async {
+    try {
+      final response = await _dio.get('/steps/today');
+      if (response.statusCode == 200 && response.data != null) {
+        return response.data['steps'] as int? ?? 0;
+      }
+      return 0;
+    } catch (e) {
+      return 0;
+    }
+  }
 }
 
 class DailyStepData {

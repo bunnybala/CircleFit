@@ -36,13 +36,44 @@ void onStart(ServiceInstance service) async {
   int baseSteps = (savedDateStr != null && savedDateStr != startTodayStr) ? 0 : savedBase;
   String currentDateStr = startTodayStr;
   int currentTodaySteps = baseSteps == 0 ? 0 : (prefs.getInt('last_step_count') ?? 0);
+  int restoredBackendSteps = prefs.getInt('last_step_count') ?? 0;
   DateTime lastSyncTime = DateTime.fromMillisecondsSinceEpoch(0);
+
+  // Listen for user authentication state changes
+  service.on('userLoggedOut').listen((event) async {
+    baseSteps = 0;
+    currentTodaySteps = 0;
+    restoredBackendSteps = 0;
+    await prefs.remove('base_steps');
+    await prefs.remove('last_step_count');
+    await prefs.remove('last_step_date');
+    await prefs.remove('jwt_token');
+    await prefs.remove('active_user_id');
+    service.invoke('updateSteps', {'steps': 0, 'timestamp': DateTime.now().toIso8601String()});
+  });
+
+  service.on('userLoggedIn').listen((event) async {
+    await prefs.reload();
+    final initialSteps = (event != null && event['initialSteps'] != null)
+        ? (event['initialSteps'] as int)
+        : (prefs.getInt('last_step_count') ?? 0);
+    restoredBackendSteps = initialSteps;
+    baseSteps = 0; // Force re-anchoring baseline relative to restoredBackendSteps
+    currentTodaySteps = restoredBackendSteps;
+    service.invoke('updateSteps', {'steps': currentTodaySteps, 'timestamp': DateTime.now().toIso8601String()});
+  });
 
   // ── Pedometer stream ──────────────────────────────────────────────────────
   try {
-    Pedometer.stepCountStream.listen((StepCount event) {
+    Pedometer.stepCountStream.listen((StepCount event) async {
       final totalSensorSteps = event.steps;
       if (totalSensorSteps == 0) return;
+
+      // Check if user is logged in before tracking/syncing steps
+      final token = prefs.getString('jwt_token');
+      if (token == null || token.isEmpty) {
+        return;
+      }
 
       // ── Midnight rollover check ───────────────────────────────────────────
       // Re-evaluate today's date on every event so the service detects
@@ -53,6 +84,7 @@ void onStart(ServiceInstance service) async {
         currentDateStr = nowDateStr;
         baseSteps = totalSensorSteps;
         currentTodaySteps = 0;
+        restoredBackendSteps = 0;
         prefs.setInt('base_steps', baseSteps);
         prefs.setString('last_step_date', currentDateStr);
         prefs.setInt('last_step_count', 0);
@@ -62,13 +94,13 @@ void onStart(ServiceInstance service) async {
 
       // ── Normal step calculation ───────────────────────────────────────────
       if (baseSteps == 0) {
-        // First event of new session: lock in baseline
-        baseSteps = totalSensorSteps;
+        // First event of new session: lock baseline relative to restoredBackendSteps
+        baseSteps = (totalSensorSteps - restoredBackendSteps).clamp(0, totalSensorSteps);
         prefs.setInt('base_steps', baseSteps);
         prefs.setString('last_step_date', currentDateStr);
       } else if (totalSensorSteps < baseSteps) {
         // Device rebooted: sensor counter reset below saved base
-        baseSteps = totalSensorSteps;
+        baseSteps = (totalSensorSteps - restoredBackendSteps).clamp(0, totalSensorSteps);
         prefs.setInt('base_steps', baseSteps);
       }
 
@@ -87,9 +119,9 @@ void onStart(ServiceInstance service) async {
       if (now.difference(lastSyncTime).inSeconds >= 10) {
         lastSyncTime = now;
         prefs.reload().then((_) {
-          final token = prefs.getString('jwt_token');
-          if (token != null && todaySteps > 0) {
-            _syncToBackend(steps: todaySteps, token: token);
+          final currentToken = prefs.getString('jwt_token');
+          if (currentToken != null && currentToken.isNotEmpty && todaySteps > 0) {
+            _syncToBackend(steps: todaySteps, token: currentToken);
           }
         });
       }
@@ -104,7 +136,7 @@ void onStart(ServiceInstance service) async {
   service.on('syncSteps').listen((event) async {
     await prefs.reload(); // Reload prefs to catch updates from the main isolate
     final token = prefs.getString('jwt_token');
-    if (token == null) return;
+    if (token == null || token.isEmpty) return;
     if (currentTodaySteps > 0) {
       await _syncToBackend(steps: currentTodaySteps, token: token);
     }
@@ -128,8 +160,7 @@ Future<void> _syncToBackend({required int steps, required String token}) async {
 
     // Read base URL from shared prefs, or use default
     final prefs = await SharedPreferences.getInstance();
-    // final baseUrl = prefs.getString('api_base_url') ?? 'http://192.168.1.5:8081/api';
-    final baseUrl = prefs.getString('api_base_url') ?? 'http://192.168.1.12:8081/api';
+    final baseUrl = prefs.getString('api_base_url') ?? 'http://127.0.0.1:8081/api';
 
     final request = await client.postUrl(Uri.parse('$baseUrl/steps/sync'));
     request.headers.set('Content-Type', 'application/json');

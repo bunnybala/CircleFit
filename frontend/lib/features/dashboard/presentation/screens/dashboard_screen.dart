@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../../tracking/presentation/providers/step_provider.dart';
+import '../../../tracking/presentation/providers/water_provider.dart';
 import '../../../tracking/data/step_repository.dart';
 import '../widgets/water_tracker_card.dart';
 import '../widgets/nutrition_balance_card.dart';
@@ -41,6 +42,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
   }
 
   void _triggerSync() {
+    ref.read(waterIntakeProvider.notifier).fetchWaterLog();
     if (kIsWeb) return;
     final service = FlutterBackgroundService();
     service.invoke('syncSteps');
@@ -107,6 +109,7 @@ class _DashboardScreenState extends ConsumerState<DashboardScreen> {
             onRefresh: () async {
               ref.invalidate(profileProvider);
               ref.invalidate(weeklyStepsProvider);
+              await ref.read(waterIntakeProvider.notifier).fetchWaterLog();
             },
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
