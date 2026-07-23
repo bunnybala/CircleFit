@@ -54,6 +54,38 @@ class _ChatTabState extends ConsumerState<ChatTab> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<Map<int, ChatState>>(chatProvider, (previous, next) {
+      final err = next[widget.groupId]?.errorMessage;
+      if (err != null && err != previous?[widget.groupId]?.errorMessage) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: const Row(
+              children: [
+                Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28),
+                SizedBox(width: 8),
+                Text('Message Blocked', style: TextStyle(fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: Text(err),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  ref.read(chatProvider.notifier).clearError(widget.groupId);
+                },
+                child: const Text('OK', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        );
+      }
+    });
+
     final chatMap = ref.watch(chatProvider);
     final chatState = chatMap[widget.groupId] ?? ChatState(messages: []);
     

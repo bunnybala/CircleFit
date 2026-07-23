@@ -8,6 +8,7 @@ import com.circlefit.backend.model.User;
 import com.circlefit.backend.repository.ChatMessageRepository;
 import com.circlefit.backend.repository.GroupRepository;
 import com.circlefit.backend.repository.UserRepository;
+import com.circlefit.backend.service.ProfanityFilterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -33,11 +34,23 @@ public class ChatController {
     private final ChatMessageRepository chatMessageRepository;
     private final GroupRepository groupRepository;
     private final UserRepository userRepository;
+    private final ProfanityFilterService profanityFilterService;
 
     @MessageMapping("/chat/{groupId}/sendMessage")
     @Transactional
     public void sendMessage(@DestinationVariable Long groupId, @Payload ChatMessageReq req, Authentication authentication) {
         if (authentication == null || authentication.getName() == null) {
+            return;
+        }
+
+        // Intercept and block vulgar messages
+        if (req != null && profanityFilterService.containsProfanity(req.getContent())) {
+            // Send feedback ONLY to the sender via a private WebSocket queue
+            messagingTemplate.convertAndSendToUser(
+                authentication.getName(),
+                "/queue/errors",
+                "Your message was blocked because it contained inappropriate language."
+            );
             return;
         }
 

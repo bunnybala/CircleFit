@@ -12,6 +12,7 @@ class ChatState {
   final bool isConnected;
   final int page;
   final bool hasMore;
+  final String? errorMessage;
 
   ChatState({
     required this.messages,
@@ -19,6 +20,7 @@ class ChatState {
     this.isConnected = false,
     this.page = 0,
     this.hasMore = true,
+    this.errorMessage,
   });
 
   ChatState copyWith({
@@ -27,6 +29,8 @@ class ChatState {
     bool? isConnected,
     int? page,
     bool? hasMore,
+    String? errorMessage,
+    bool clearError = false,
   }) {
     return ChatState(
       messages: messages ?? this.messages,
@@ -34,6 +38,7 @@ class ChatState {
       isConnected: isConnected ?? this.isConnected,
       page: page ?? this.page,
       hasMore: hasMore ?? this.hasMore,
+      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
 }
@@ -84,8 +89,7 @@ class ChatNotifier extends Notifier<Map<int, ChatState>> {
   Future<void> _connectStomp(int groupId) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-    // final baseUrl = prefs.getString('api_base_url') ?? 'http://172.20.10.3:8081/api';
-    final baseUrl = prefs.getString('api_base_url') ?? 'http://192.168.1.12:8081/api';
+    final baseUrl = prefs.getString('api_base_url') ?? 'http://127.0.0.1:8081/api';
     
     // Convert http(s) to ws(s)
     String wsUrl = baseUrl.startsWith('https') 
@@ -120,6 +124,15 @@ class ChatNotifier extends Notifier<Map<int, ChatState>> {
         }
       },
     );
+    _clients[groupId]?.subscribe(
+      destination: '/user/queue/errors',
+      callback: (frame) {
+        if (frame.body != null) {
+          final current = state[groupId] ?? ChatState(messages: []);
+          _updateState(groupId, current.copyWith(errorMessage: frame.body!));
+        }
+      },
+    );
   }
 
   void sendMessage(int groupId, String content) {
@@ -130,6 +143,13 @@ class ChatNotifier extends Notifier<Map<int, ChatState>> {
       destination: '/app/chat/$groupId/sendMessage',
       body: json.encode({'content': content}),
     );
+  }
+
+  void clearError(int groupId) {
+    final current = state[groupId];
+    if (current != null) {
+      _updateState(groupId, current.copyWith(clearError: true));
+    }
   }
 
   void _updateState(int groupId, ChatState newState) {

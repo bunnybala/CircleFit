@@ -3,8 +3,7 @@ import 'package:dio/dio.dart';
 class DioClient {
   static final Dio _dio = Dio(
     BaseOptions(
-      // baseUrl: 'http://172.20.10.3:8081/api',
-      baseUrl: 'http://192.168.1.12:8081/api', // Uses ADB reverse (adb reverse tcp:8081 tcp:8081) for physical devices
+      baseUrl: 'http://127.0.0.1:8081/api', // ADB reverse USB tunnel (127.0.0.1:8081)
       connectTimeout: const Duration(seconds: 10),
       receiveTimeout: const Duration(seconds: 10),
       headers: {

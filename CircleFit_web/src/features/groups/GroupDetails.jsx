@@ -20,6 +20,7 @@ function GroupDetails() {
   const [chatLoading, setChatLoading] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   const [msgInput, setMsgInput] = useState('');
+  const [vulgarAlert, setVulgarAlert] = useState(null);
   const stompClientRef = useRef(null);
   const chatScrollRef = useRef(null);
 
@@ -71,6 +72,11 @@ function GroupDetails() {
           if (message.body) {
             const msg = JSON.parse(message.body);
             setMessages((prev) => [msg, ...prev]);
+          }
+        });
+        client.subscribe('/user/queue/errors', (message) => {
+          if (message.body) {
+            setVulgarAlert(message.body);
           }
         });
       },
@@ -750,6 +756,56 @@ function GroupDetails() {
               ))}
             </div>
           )}
+        </div>
+      )}
+      {/* Vulgar Content Modal Overlay */}
+      {vulgarAlert && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          backdropFilter: 'blur(4px)'
+        }}>
+          <div style={{
+            backgroundColor: '#ffffff',
+            padding: '24px 32px',
+            borderRadius: '20px',
+            boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
+            textAlign: 'center',
+            maxWidth: '400px',
+            width: '90%'
+          }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
+            <h3 style={{ margin: '0 0 10px 0', color: '#ff4d4f', fontWeight: 'bold' }}>Message Blocked</h3>
+            <p style={{ margin: '0 0 20px 0', color: '#595959', fontSize: '14px', lineHeight: '1.5' }}>
+              {vulgarAlert}
+            </p>
+            <button
+              onClick={() => setVulgarAlert(null)}
+              style={{
+                backgroundColor: '#ff4d4f',
+                color: '#ffffff',
+                border: 'none',
+                padding: '10px 24px',
+                borderRadius: '12px',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                cursor: 'pointer',
+                transition: 'background-color 0.2s'
+              }}
+              onMouseOver={(e) => e.target.style.backgroundColor = '#d9363e'}
+              onMouseOut={(e) => e.target.style.backgroundColor = '#ff4d4f'}
+            >
+              OK
+            </button>
+          </div>
         </div>
       )}
     </div>
